@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>สถานะคำสั่งซื้อ — ShopVerse</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <style>
+    .status-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 32px; text-align: center; }
+    
+    .status-icon { font-size: 4rem; margin-bottom: 16px; }
+    .order-title { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+    .order-desc { color: var(--text-2); font-size: 1rem; margin-bottom: 32px; }
+    
+    .detail-box { text-align: left; background: var(--bg-3); padding: 24px; border-radius: 12px; margin-bottom: 24px; }
+    .detail-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .detail-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    
+    .badge { padding: 4px 12px; border-radius: 99px; font-size: 0.8rem; font-weight: 700; }
+    .badge-paid { background: rgba(16,185,129,0.15); color: var(--green); }
+    .badge-unpaid { background: rgba(239,68,68,0.15); color: var(--red); }
+    
+    .btn { display: inline-block; padding: 12px 24px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text); text-decoration: none; font-weight: 600; transition: var(--transition); }
+    .btn:hover { background: rgba(255,255,255,0.1); border-color: var(--purple); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">⚡ ShopVerse</div>
+  </header>
+
+  <div class="status-container">
+    <div class="card" id="statusCard">
+      <div style="padding:40px;color:var(--text-3)">⏳ กำลังโหลดข้อมูล...</div>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = urlParams.get('id');
+    
+    if(!orderId) window.location.href = '/';
+    
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch(`/api/orders/${orderId}`);
+        const data = await res.json();
+        renderStatus(data);
+      } catch (e) {
+        document.getElementById('statusCard').innerHTML = `<div class="status-icon">❌</div><div class="order-title">ไม่พบคำสั่งซื้อ</div><a href="/" class="btn">กลับหน้าแรก</a>`;
+      }
+    });
+    
+    function renderStatus(order) {
+      const isPaid = order.paymentStatus === 'PAID';
+      
+      let icon = '📦';
+      let title = 'รอการจัดส่ง';
+      if(order.status === 'SHIPPED') { icon = '🚚'; title = 'จัดส่งแล้ว'; }
+      if(!isPaid) { icon = '⏳'; title = 'รอการชำระเงิน'; }
+      
+      const html = `
+        <div class="status-icon">${icon}</div>
+        <div class="order-title">${title}</div>
+        <div class="order-desc">หมายเลขคำสั่งซื้อ: <strong style="color:white">${order.orderNumber}</strong></div>
+        
+        <div class="detail-box">
+          <div class="detail-row">
+            <span style="color:var(--text-2)">สถานะชำระเงิน</span>
+            <span class="badge ${isPaid ? 'badge-paid' : 'badge-unpaid'}">${isPaid ? 'ชำระแล้ว' : 'ยังไม่ชำระ'}</span>
+          </div>
+          <div class="detail-row">
+            <span style="color:var(--text-2)">สถานะคำสั่งซื้อ</span>
+            <span style="font-weight:700">${order.status}</span>
+          </div>
+          <div class="detail-row">
+            <span style="color:var(--text-2)">ยอดสุทธิ</span>
+            <span style="font-weight:800;color:var(--purple-light)">฿${Number(order.totalAmount).toLocaleString()}</span>
+          </div>
+          <div class="detail-row" style="flex-direction:column;gap:8px">
+            <span style="color:var(--text-2)">ที่อยู่จัดส่ง</span>
+            <span style="line-height:1.5">${order.shippingAddress}</span>
+          </div>
+        </div>
+        
+        <div style="display:flex;gap:12px;justify-content:center">
+          ${!isPaid ? `<a href="/payment.html?id=${order.id}" class="btn" style="background:var(--purple);color:white;border:none">ชำระเงินตอนนี้</a>` : ''}
+          <a href="/" class="btn">กลับหน้าแรก</a>
+        </div>
+      `;
+      
+      document.getElementById('statusCard').innerHTML = html;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShopVerse — E-Commerce</title>
+  <meta name="description" content="ร้านค้าออนไลน์ ShopVerse สินค้าคุณภาพ ราคาดี" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-logo">
+        <span class="logo-icon">⚡</span>
+        <span>ShopVerse</span>
+      </a>
+      <div class="nav-search">
+        <input type="text" id="searchInput" placeholder="ค้นหาสินค้า..." />
+        <button class="search-btn" onclick="searchProducts()">🔍</button>
+      </div>
+      <div class="nav-actions">
+        <button class="btn-icon" id="cartBtn" onclick="toggleCart()">
+          🛒 <span class="cart-badge" id="cartCount">0</span>
+        </button>
+        <div class="user-info" id="userInfo" style="display:none;align-items:center;gap:12px;cursor:pointer" onclick="toggleProfileMenu()">
+          <div style="width:32px;height:32px;background:var(--purple);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700" id="userAvatar">U</div>
+          <span id="userName" style="font-weight:600">User</span>
+        </div>
+        <button class="btn-primary" style="padding:8px 16px;font-size:0.9rem" id="btnLogin" onclick="openAuthModal()">เข้าสู่ระบบ</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">🔥 New Arrivals 2026</div>
+      <h1 class="hero-title">ช้อปสินค้า<br/><span class="gradient-text">คุณภาพดี ราคาเด็ด</span></h1>
+      <p class="hero-subtitle">เชื่อมต่อกับ Spring Boot API · PostgreSQL Database</p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="scrollToProducts()">ดูสินค้าทั้งหมด</button>
+        <button class="btn-outline" onclick="checkApiHealth()">🟢 ตรวจสอบ API</button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><span id="totalProducts">-</span><small>สินค้า</small></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span id="totalCategories">-</span><small>หมวดหมู่</small></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span>8080</span><small>Port</small></div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="floating-card card-1">📦 Orders Ready</div>
+      <div class="floating-card card-2">🔐 Secured API</div>
+      <div class="floating-card card-3">🗄️ PostgreSQL</div>
+      <div class="hero-blob"></div>
+    </div>
+  </section>
+
+  <!-- CATEGORIES -->
+  <section class="section" id="categoriesSection">
+    <div class="container">
+      <div class="section-header">
+        <h2>หมวดหมู่สินค้า</h2>
+        <p>เลือกดูสินค้าตามหมวดหมู่ที่สนใจ</p>
+      </div>
+      <div class="categories-grid" id="categoriesGrid">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCTS -->
+  <section class="section" id="productsSection">
+    <div class="container">
+      <div class="section-header">
+        <h2>สินค้าทั้งหมด</h2>
+        <div class="sort-bar">
+          <select id="sortSelect" onchange="loadProducts()">
+            <option value="">เรียงตาม: ค่าเริ่มต้น</option>
+            <option value="price,asc">ราคา: น้อยไปมาก</option>
+            <option value="price,desc">ราคา: มากไปน้อย</option>
+            <option value="name,asc">ชื่อ: A-Z</option>
+          </select>
+        </div>
+      </div>
+      <div class="products-grid" id="productsGrid">
+        <div class="skeleton-card tall"></div>
+        <div class="skeleton-card tall"></div>
+        <div class="skeleton-card tall"></div>
+        <div class="skeleton-card tall"></div>
+        <div class="skeleton-card tall"></div>
+        <div class="skeleton-card tall"></div>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </section>
+
+  <!-- CART DRAWER -->
+  <div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
+  <div class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+      <h3>🛒 ตะกร้าสินค้า</h3>
+      <button class="close-btn" onclick="toggleCart()">✕</button>
+    </div>
+    <div class="cart-items" id="cartItems">
+      <div class="cart-empty">
+        <div class="empty-icon">🛒</div>
+        <p>ยังไม่มีสินค้าในตะกร้า</p>
+        <button class="btn-primary small" onclick="toggleCart()">เลือกสินค้า</button>
+      </div>
+    </div>
+    <div class="cart-footer" id="cartFooter" style="display:none">
+      <div class="cart-total">
+        <span>รวมทั้งหมด</span>
+        <span class="total-price" id="cartTotal">฿0</span>
+      </div>
+      <button class="btn-primary full" onclick="checkout()">สั่งซื้อเลย 🚀</button>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- API STATUS MODAL -->
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
+  <div class="modal" id="apiModal">
+    <div class="modal-header">
+      <h3>🔌 สถานะ API</h3>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+
+  <!-- AUTH MODAL -->
+  <div class="modal-overlay" id="authOverlay" onclick="closeAuthModal()"></div>
+  <div class="modal" id="authModal" style="max-width:400px">
+    <div class="modal-header">
+      <h3 id="authTitle">เข้าสู่ระบบ</h3>
+      <button class="close-btn" onclick="closeAuthModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="loginForm">
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:0.85rem;margin-bottom:4px;color:var(--text-2)">ชื่อผู้ใช้</label>
+          <input type="text" id="loginUsername" style="width:100%;padding:10px 14px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit"/>
+        </div>
+        <div style="margin-bottom:20px">
+          <label style="display:block;font-size:0.85rem;margin-bottom:4px;color:var(--text-2)">รหัสผ่าน</label>
+          <input type="password" id="loginPassword" style="width:100%;padding:10px 14px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit"/>
+        </div>
+        <button class="btn-primary full" onclick="submitLogin()">เข้าสู่ระบบ</button>
+        <div style="text-align:center;margin-top:16px;font-size:0.9rem">
+          ยังไม่มีบัญชี? <a href="#" style="color:var(--purple);font-weight:600" onclick="toggleAuthMode('register')">สมัครสมาชิก</a>
+        </div>
+      </div>
+      
+      <div id="registerForm" style="display:none">
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:0.85rem;margin-bottom:4px;color:var(--text-2)">ชื่อผู้ใช้ *</label>
+          <input type="text" id="regUsername" style="width:100%;padding:10px 14px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit"/>
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:0.85rem;margin-bottom:4px;color:var(--text-2)">อีเมล *</label>
+          <input type="email" id="regEmail" style="width:100%;padding:10px 14px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit"/>
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:0.85rem;margin-bottom:4px;color:var(--text-2)">รหัสผ่าน *</label>
+          <input type="password" id="regPassword" style="width:100%;padding:10px 14px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit"/>
+        </div>
+        <div style="margin-bottom:20px">
+          <label style="display:block;font-size:0.85rem;margin-bottom:4px;color:var(--text-2)">ชื่อ-นามสกุล</label>
+          <input type="text" id="regFullName" style="width:100%;padding:10px 14px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit"/>
+        </div>
+        <button class="btn-primary full" onclick="submitRegister()">สมัครสมาชิก</button>
+        <div style="text-align:center;margin-top:16px;font-size:0.9rem">
+          มีบัญชีแล้ว? <a href="#" style="color:var(--purple);font-weight:600" onclick="toggleAuthMode('login')">เข้าสู่ระบบ</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-logo">⚡ ShopVerse</div>
+      <p>Built with Spring Boot 4.0.7 · PostgreSQL 18 · Java 21</p>
+      <div class="footer-links">
+        <a href="/api/public/ping" target="_blank">API Ping</a>
+        <a href="/actuator/health" target="_blank">Health</a>
+        <a href="/api/public/products" target="_blank">Products JSON</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/app.js?v=2"></script>
+  <script src="/js/auth.js?v=2"></script>
+</body>
+</html>

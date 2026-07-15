@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ชำระเงิน (Checkout) — ShopVerse</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <style>
+    .checkout-container { max-width: 1000px; margin: 40px auto; padding: 0 20px; display: grid; grid-template-columns: 1.5fr 1fr; gap: 32px; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; margin-bottom: 24px; }
+    .card-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    
+    .cart-item { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+    .cart-item:last-child { border-bottom: none; }
+    .item-img { width: 80px; height: 80px; background: var(--bg-3); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+    .item-details { flex: 1; }
+    .item-name { font-weight: 600; margin-bottom: 4px; }
+    .item-price { color: var(--purple-light); font-weight: 700; }
+    
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.9rem; margin-bottom: 8px; color: var(--text-2); }
+    .form-group input, .form-group textarea { width: 100%; padding: 12px 16px; background: var(--bg-3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: inherit; }
+    .form-group input:focus, .form-group textarea:focus { border-color: var(--purple); outline: none; }
+    
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem; }
+    .summary-total { display: flex; justify-content: space-between; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 1.2rem; font-weight: 800; color: var(--green); }
+    
+    .btn-checkout { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--purple), var(--pink)); border: none; border-radius: 8px; color: white; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: var(--transition); }
+    .btn-checkout:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(139,92,246,0.4); }
+    .btn-checkout:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    @media (max-width: 768px) { .checkout-container { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">⚡ ShopVerse</div>
+    <a href="/" style="color:var(--text);text-decoration:none;font-weight:600">← กลับไปช้อปต่อ</a>
+  </header>
+
+  <div class="checkout-container">
+    <div class="left-col">
+      <div class="card">
+        <div class="card-title">📍 ที่อยู่จัดส่ง</div>
+        <div class="form-group">
+          <label>ชื่อ-นามสกุล *</label>
+          <input type="text" id="custName" placeholder="สมชาย ใจดี"/>
+        </div>
+        <div class="form-group">
+          <label>เบอร์โทรศัพท์ *</label>
+          <input type="text" id="custPhone" placeholder="0812345678"/>
+        </div>
+        <div class="form-group">
+          <label>ที่อยู่แบบเต็ม *</label>
+          <textarea id="custAddress" rows="3" placeholder="บ้านเลขที่, หมู่, ซอย, ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์"></textarea>
+        </div>
+        <div class="form-group">
+          <label>หมายเหตุ (ถ้ามี)</label>
+          <input type="text" id="custNote" placeholder="เช่น ฝากไว้ที่ป้อมยาม"/>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">💳 ช่องทางชำระเงิน</div>
+        <div style="padding: 16px; border: 2px solid var(--purple); border-radius: 8px; background: rgba(139,92,246,0.1); display: flex; align-items: center; gap: 12px;">
+          <div style="font-size: 1.5rem">📱</div>
+          <div>
+            <div style="font-weight: 700">QR PromptPay</div>
+            <div style="font-size: 0.85rem; color: var(--text-2)">สแกนจ่ายผ่านแอปธนาคาร ฟรีค่าธรรมเนียม</div>
+          </div>
+          <div style="margin-left: auto; color: var(--purple); font-weight: 700">✓ เลือกแล้ว</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="card">
+        <div class="card-title">🛒 สรุปคำสั่งซื้อ</div>
+        <div id="checkoutItems" style="margin-bottom: 24px;"></div>
+        
+        <div class="summary-row">
+          <span style="color:var(--text-2)">ยอดรวมสินค้า</span>
+          <span id="sumSubtotal">฿0</span>
+        </div>
+        <div class="summary-row">
+          <span style="color:var(--text-2)">ค่าจัดส่ง <span style="font-size:0.75rem;background:rgba(16,185,129,0.2);color:var(--green);padding:2px 6px;border-radius:99px;margin-left:4px">ส่งฟรีเมื่อซื้อครบ ฿500</span></span>
+          <span id="sumShipping">฿0</span>
+        </div>
+        <div class="summary-total">
+          <span>ยอดสุทธิ</span>
+          <span id="sumTotal">฿0</span>
+        </div>
+        
+        <button class="btn-checkout" id="btnPlaceOrder" style="margin-top: 24px;" onclick="placeOrder()">
+          ดำเนินการชำระเงิน 🚀
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const cart = JSON.parse(localStorage.getItem('shopverse_cart') || '[]');
+    let orderSubtotal = 0;
+    let orderShipping = 0;
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      if(cart.length === 0) {
+        alert('ไม่มีสินค้าในตะกร้า');
+        window.location.href = '/';
+        return;
+      }
+      renderCheckout();
+    });
+
+    function renderCheckout() {
+      const itemsDiv = document.getElementById('checkoutItems');
+      orderSubtotal = 0;
+      
+      itemsDiv.innerHTML = cart.map(item => {
+        const lineTotal = item.price * item.qty;
+        orderSubtotal += lineTotal;
+        return `
+          <div class="cart-item">
+            <div class="item-img">📦</div>
+            <div class="item-details">
+              <div class="item-name">${item.name}</div>
+              <div style="font-size:0.85rem;color:var(--text-2)">จำนวน: ${item.qty}</div>
+              <div class="item-price">฿${lineTotal.toLocaleString()}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      orderShipping = orderSubtotal >= 500 ? 0 : 50;
+      
+      document.getElementById('sumSubtotal').textContent = `฿${orderSubtotal.toLocaleString()}`;
+      document.getElementById('sumShipping').textContent = orderShipping === 0 ? 'ฟรี' : `฿${orderShipping}`;
+      document.getElementById('sumTotal').textContent = `฿${(orderSubtotal + orderShipping).toLocaleString()}`;
+    }
+
+    async function placeOrder() {
+      const name = document.getElementById('custName').value.trim();
+      const phone = document.getElementById('custPhone').value.trim();
+      const addr = document.getElementById('custAddress').value.trim();
+      
+      if(!name || !phone || !addr) {
+        alert('กรุณากรอกข้อมูลจัดส่งให้ครบถ้วน');
+        return;
+      }
+      
+      const btn = document.getElementById('btnPlaceOrder');
+      btn.disabled = true;
+      btn.textContent = 'กำลังสร้างคำสั่งซื้อ...';
+      
+      const payload = {
+        items: cart.map(i => ({ productId: i.id, quantity: i.qty })),
+        shippingAddress: `${name} (${phone}) ${addr}`,
+        note: document.getElementById('custNote').value.trim()
+      };
+      
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        
+        if(res.ok && data.success) {
+          localStorage.removeItem('shopverse_cart'); // clear cart
+          window.location.href = `/payment.html?id=${data.orderId}`;
+        } else {
+          alert('❌ ' + (data.message || 'เกิดข้อผิดพลาด'));
+          btn.disabled = false;
+          btn.textContent = 'ดำเนินการชำระเงิน 🚀';
+        }
+      } catch (e) {
+        alert('❌ เชื่อมต่อระบบขัดข้อง');
+        btn.disabled = false;
+        btn.textContent = 'ดำเนินการชำระเงิน 🚀';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ชำระเงิน (Payment) — ShopVerse</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+    .payment-card { width: 100%; max-width: 480px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; overflow: hidden; box-shadow: 0 32px 80px rgba(0,0,0,0.5); text-align: center; }
+    
+    .payment-header { background: linear-gradient(135deg, #1a0533, #0d1a3a); padding: 32px 24px; border-bottom: 1px solid var(--border); }
+    .order-num { color: var(--purple-light); font-size: 0.9rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; }
+    .total-amount { font-size: 2.5rem; font-weight: 800; color: white; }
+    
+    .qr-container { padding: 40px 24px; }
+    .qr-box { background: white; padding: 16px; border-radius: 16px; display: inline-block; margin-bottom: 24px; box-shadow: 0 16px 40px rgba(0,0,0,0.3); }
+    .qr-box img { display: block; width: 240px; height: 240px; }
+    
+    .instruction { color: var(--text-2); font-size: 0.95rem; line-height: 1.6; margin-bottom: 24px; }
+    .countdown { font-size: 1.2rem; font-weight: 700; color: var(--yellow); font-variant-numeric: tabular-nums; margin-bottom: 16px; }
+    
+    .status-box { padding: 16px; border-radius: 12px; font-weight: 600; display: none; margin: 0 24px 32px; }
+    .status-box.waiting { background: rgba(245,158,11,0.1); color: var(--yellow); border: 1px solid rgba(245,158,11,0.2); display: block; }
+    .status-box.success { background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
+    
+    .btn { display: inline-block; width: calc(100% - 48px); padding: 16px; border-radius: 12px; font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer; transition: var(--transition); border: none; text-decoration: none; margin-bottom: 32px; }
+    .btn-primary { background: linear-gradient(135deg, var(--purple), var(--pink)); color: white; display: none; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(139,92,246,0.4); }
+  </style>
+</head>
+<body>
+
+  <div class="payment-card">
+    <div class="payment-header">
+      <div class="order-num" id="orderNumber">กำลังโหลด...</div>
+      <div class="total-amount" id="totalAmount">฿0.00</div>
+    </div>
+    
+    <div class="qr-container" id="qrContainer">
+      <div class="qr-box">
+        <img id="qrImage" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="PromptPay QR"/>
+      </div>
+      <p class="instruction">
+        สแกน QR Code นี้ผ่านแอปพลิเคชันธนาคาร<br/>
+        ยอดเงิน <strong><span id="promptAmount">0</span></strong> บาท จะแสดงอัตโนมัติ
+      </p>
+      <div class="countdown" id="countdown">15:00</div>
+    </div>
+
+    <div class="status-box waiting" id="statusBox">
+      <span class="spinner" style="display:inline-block;animation:spin 1s linear infinite;margin-right:8px">⏳</span>
+      กำลังรอการชำระเงิน...
+    </div>
+    
+    <a href="#" class="btn btn-primary" id="btnNext">ดูสถานะคำสั่งซื้อ →</a>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = urlParams.get('id');
+    let pollTimer;
+    let timeleft = 15 * 60; // 15 mins
+    
+    if(!orderId) window.location.href = '/';
+    
+    document.addEventListener('DOMContentLoaded', loadPayment);
+    
+    async function loadPayment() {
+      try {
+        const res = await fetch(`/api/payment/qr/${orderId}`);
+        const data = await res.json();
+        
+        document.getElementById('orderNumber').textContent = `ORDER: ${data.orderNumber}`;
+        document.getElementById('totalAmount').textContent = `฿${Number(data.totalAmount||0).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+        document.getElementById('promptAmount').textContent = Number(data.totalAmount||0).toLocaleString();
+        
+        if (data.paid) {
+          showSuccess(data.orderNumber);
+        } else {
+          document.getElementById('qrImage').src = data.qrBase64;
+          startPolling();
+          startCountdown();
+        }
+      } catch (e) {
+        alert('ไม่สามารถโหลดข้อมูล QR ได้');
+      }
+    }
+    
+    function startPolling() {
+      pollTimer = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/payment/status/${orderId}`);
+          const data = await res.json();
+          if (data.paid) {
+            clearInterval(pollTimer);
+            showSuccess(data.orderNumber);
+          }
+        } catch(e) {}
+      }, 5000); // Check every 5 seconds
+    }
+    
+    function startCountdown() {
+      const el = document.getElementById('countdown');
+      const timer = setInterval(() => {
+        if(timeleft <= 0) {
+          clearInterval(timer); clearInterval(pollTimer);
+          el.textContent = "00:00 (หมดเวลา)";
+          el.style.color = "var(--red)";
+          document.getElementById('qrImage').style.opacity = '0.2';
+        } else {
+          timeleft--;
+          const m = Math.floor(timeleft / 60).toString().padStart(2, '0');
+          const s = (timeleft % 60).toString().padStart(2, '0');
+          el.textContent = `${m}:${s}`;
+        }
+      }, 1000);
+    }
+    
+    function showSuccess(orderNum) {
+      document.getElementById('qrContainer').style.display = 'none';
+      const box = document.getElementById('statusBox');
+      box.className = 'status-box success';
+      box.innerHTML = '✅ ชำระเงินสำเร็จ!';
+      
+      const btn = document.getElementById('btnNext');
+      btn.style.display = 'inline-block';
+      btn.href = `/order-status.html?id=${orderId}`;
+    }
+  </script>
+</body>
+</html>
